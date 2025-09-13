@@ -215,7 +215,15 @@ public class ConfigurationFrame
                 if (fc != JFileChooser.APPROVE_OPTION)
                     return;
 
-                final java.io.File dest = chooser.getSelectedFile();
+                java.io.File dest = chooser.getSelectedFile();
+                // Ensure destination has .zip extension
+                if (dest != null && !dest.getName().toLowerCase(Locale.ROOT).endsWith(".zip"))
+                {
+                    dest = new java.io.File(dest.getParentFile(), dest.getName() + ".zip");
+                }
+
+                // make a final reference for inner classes
+                final java.io.File finalDest = dest;
 
                 // Prepare options
                 final DiagnosticReportOptions options = new DiagnosticReportOptions();
@@ -271,7 +279,14 @@ public class ConfigurationFrame
                                     java.util.List<AccountID> regs = factory.getRegisteredAccounts();
                                     int cnt = (regs == null) ? 0 : regs.size();
                                     accountCount += cnt;
-                                    String proto = (String)factory.getClass().getSimpleName();
+                                    String proto = null;
+                                    try {
+                                        // try to use a friendly display name if available
+                                        java.lang.reflect.Method m = factory.getClass().getMethod("getProtocolName");
+                                        Object val = m.invoke(factory);
+                                        if (val != null) proto = val.toString();
+                                    } catch (Throwable ignore) {}
+                                    if (proto == null) proto = factory.getClass().getSimpleName();
                                     perProtocol.put(proto, perProtocol.getOrDefault(proto, 0) + cnt);
                                 }
                                 catch (Throwable ignore) { /* ignore per-factory errors */ }
@@ -372,7 +387,7 @@ public class ConfigurationFrame
                             // proceed without screenshot
                         }
 
-                        gen.generate(dest, options);
+                        gen.generate(finalDest, options);
                         return null;
                     }
 
@@ -384,7 +399,7 @@ public class ConfigurationFrame
                         {
                             get();
                             JOptionPane.showMessageDialog(ConfigurationFrame.this,
-                                GuiActivator.getResources().getI18NString("plugin.diagnostics.SUCCESS") + "\n" + dest.getAbsolutePath());
+                                GuiActivator.getResources().getI18NString("plugin.diagnostics.SUCCESS") + "\n" + finalDest.getAbsolutePath());
                         }
                         catch (Exception ex)
                         {

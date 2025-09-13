@@ -27,6 +27,9 @@ public class DiagnosticReportGenerator
 
     public File generate(File destination, DiagnosticReportOptions options) throws IOException
     {
+        // Track which files were included
+        List<String> includedFiles = new ArrayList<>();
+
         if (destination == null)
             throw new IllegalArgumentException("destination");
 
@@ -77,7 +80,7 @@ public class DiagnosticReportGenerator
 
                 // Build a user-friendly thread summary
                 StringBuilder friendly = new StringBuilder();
-                friendly.append("Resumen del estado de hilos (versión amigable)\n");
+                friendly.append("Resumen del estado de hilos\n");
                 friendly.append("-----------------------------------------\n");
                 int blocked = 0, waiting = 0, timed = 0, runnable = 0;
                 for (Map.Entry<Thread, StackTraceElement[]> e : traces.entrySet())
@@ -112,7 +115,7 @@ public class DiagnosticReportGenerator
                 friendly.append('\n');
                 friendly.append("Sugerencias:").append('\n');
                 if (blocked > 3)
-                    friendly.append(" - Se detectaron múltiples hilos bloqueados. Esto puede indicar contenido bloqueante o problemas de E/S.\n");
+                    friendly.append(" - Se detectaron múltiples hilos bloqueados. Esto puede indicar contenido bloqueante.\n");
                 if (waiting + timed > 20)
                     friendly.append(" - Hay muchos hilos en espera; puede ser carga de fondo alta.\n");
                 friendly.append(" - Si la aplicación no responde, intenta reiniciarla y reproduce el problema.\n");
@@ -148,6 +151,7 @@ public class DiagnosticReportGenerator
                                 if (f.isFile())
                                 {
                                     addFileToZip(zos, f, "logs/" + f.getName(), options != null && options.isRedactSensitive());
+                                    includedFiles.add("logs/" + f.getName());
                                     scanFileForIssues(f, issuesSummary);
                                 }
                             }
@@ -155,6 +159,7 @@ public class DiagnosticReportGenerator
                         else if (c.isFile())
                         {
                             addFileToZip(zos, c, "logs/" + c.getName(), options != null && options.isRedactSensitive());
+                            includedFiles.add("logs/" + c.getName());
                         }
                     }
                 }
@@ -173,6 +178,7 @@ public class DiagnosticReportGenerator
                         if (f.exists() && f.isFile())
                         {
                             addFileToZip(zos, f, "config/" + f.getName(), options != null && options.isRedactSensitive());
+                            includedFiles.add("config/" + f.getName());
                             scanFileForIssues(f, issuesSummary);
                         }
                     }
@@ -222,8 +228,17 @@ public class DiagnosticReportGenerator
 
             if (issuesSummary.length() > 0)
             {
-                String header = "Resumen de problemas detectados (heurístico):\n\n";
+                String header = "Resumen de problemas detectados:\n\n";
                 putEntry(zos, "report/issues-summary.txt", (header + issuesSummary.toString()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            }
+
+            // Write list of included files for transparency
+            if (!includedFiles.isEmpty())
+            {
+                StringBuilder inc = new StringBuilder();
+                inc.append("Archivos añadidos al ZIP:\n");
+                for (String s : includedFiles) inc.append(" - ").append(s).append('\n');
+                putEntry(zos, "report/included-files.txt", inc.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
             }
 
             zos.finish();
@@ -247,7 +262,8 @@ public class DiagnosticReportGenerator
         // Decide if this is a text file we should attempt to redact
         String lname = f.getName().toLowerCase(Locale.ROOT);
         boolean likelyText = lname.endsWith(".log") || lname.endsWith(".txt") || lname.endsWith(".properties")
-            || lname.endsWith(".xml") || lname.endsWith(".json") || lname.endsWith(".conf") || lname.endsWith(".yml") || lname.endsWith(".ini");
+            || lname.endsWith(".xml") || lname.endsWith(".json") || lname.endsWith(".conf")
+             || lname.endsWith(".yml") || lname.endsWith(".ini");
 
         if (likelyText)
         {
