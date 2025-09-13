@@ -131,7 +131,7 @@ public class ConfigurationFrame
 
         GuiActivator.bundleContext.addServiceListener(this);
 
-        // General configuration forms only.
+        // General configuration
         Collection<ServiceReference<ConfigurationForm>> cfgFormRefs;
         String osgiFilter
             = "(" + ConfigurationForm.FORM_TYPE + "="
