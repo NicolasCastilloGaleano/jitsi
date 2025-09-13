@@ -207,14 +207,12 @@ public class NeomediaActivator extends DependentActivator
         return audioConfigurationForm;
     }
 
-   /**
- * Este método obtiene la instancia del servicio de notificaciones de audio utilizando el patrón Singleton.
- * Tambien implementa un inicio lento para optimizar el rendimiento del sistema, ya que el 
- * servicio solo se crea cuando realmente se necesita cuidando así los recursos del sistema.
- * 
- * @return La instancia única del AudioNotifierService, nunca null después de la primera llamada
- * @throws IllegalStateException si el bundleContext no ha sido inicializado
- */
+    /**
+     * Returns the <tt>AudioService</tt> obtained from the bundle
+     * context.
+     * @return the <tt>AudioService</tt> obtained from the bundle
+     * context
+     */
     public static AudioNotifierService getAudioNotifierService()
     {
         if(audioNotifierService == null)
