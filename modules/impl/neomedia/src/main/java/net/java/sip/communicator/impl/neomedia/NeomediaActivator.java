@@ -212,14 +212,6 @@ public class NeomediaActivator extends DependentActivator
  * Así mismo, tiene un inicio lento para optimizar el rendimiento del sistema, ya que el 
  * servicio solo se crea cuando realmente se necesita. 
  */
-public static AudioNotifierService getAudioNotifierService()
-{
-    if(audioNotifierService == null)
-    {
-        audioNotifierService = ServiceUtils.getService(bundleContext, AudioNotifierService.class);
-    }
-    return audioNotifierService;
-}
     public static AudioNotifierService getAudioNotifierService()
     {
         if(audioNotifierService == null)
@@ -231,7 +223,7 @@ public static AudioNotifierService getAudioNotifierService()
         }
         return audioNotifierService;
     }
-    
+
     /**
      * Returns the context in which the one and only <tt>NeomediaActivator</tt>
      * instance has started executing.
@@ -406,10 +398,14 @@ public static AudioNotifierService getAudioNotifierService()
      */
     private final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(NeomediaActivator.class);
 
-    /**
-     * Starts the execution of the neomedia bundle in the specified context.
-     *
-     * @param bundleContext the context in which the neomedia bundle is to start
+   
+   /**
+     * Inicializa todos los servicios multimedia principales. 
+     * Esta inicialización sigue un orden específico porque existe interdependencia entre servicios:
+     * primero se configuran los servicios base, luego las confirguraciones que dependen 
+     * d estos, y finalmente los formularios de configuración de la interfaz de usuario.
+     * 
+     * @param bundleContext the context in which the neomedia bundle is to start 
      * executing
      */
     @Override
@@ -422,7 +418,6 @@ public static AudioNotifierService getAudioNotifierService()
 
         // MediaService
         mediaServiceImpl = (MediaServiceImpl) LibJitsi.getMediaService();
-
         bundleContext.registerService(
             MediaService.class,
             mediaServiceImpl,
